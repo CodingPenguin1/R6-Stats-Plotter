@@ -1,12 +1,12 @@
 import asyncio
+import csv
 import json
+from os import mkdir
 
 import matplotlib.pyplot as plt
 import r6sapi as api
 
 from Player import Player
-
-import csv
 
 players = []
 
@@ -68,12 +68,14 @@ def plot_ranks():
     plt.show()
 
 
-def write_players_to_csv():
+def write_players_to_csv(team_name):
     global players
 
-    fields = ['Player', 'Kills', 'Deaths', 'K/D', 'Kills/Game', 'Headshots', 'Headshot Ratio', 'Wins', 'Losses', 'Win/Loss', 'Rank']
+    general_fields = ['Player', 'Kills', 'Deaths', 'K/D', 'Kills/Game', 'Headshots', 'Headshot Ratio', 'Wins', 'Losses', 'Win/Loss', 'Rank', 'Time Played (Hrs)']
+    op_fields = ['Player', 'Operator', 'Kills', 'Deaths', 'K/D', 'Headshots', 'Headshot Ratio', 'Wins', 'Losses', 'Win/Loss', 'Win Percentage', 'Time Played (Hrs)']
 
-    player_data = []
+    general_data = []
+    op_data = []
     for player in players:
         data = []
         data.append(player.username)
@@ -87,11 +89,10 @@ def write_players_to_csv():
         data.append(player.losses)
         data.append(player.winloss)
         data.append(player.rank_name)
-        player_data.append(data)
+        data.append(player.time_played)
+        general_data.append(data)
 
         # Write op data for player
-        op_fields = ['Operator', 'Kills', 'Deaths', 'K/D', 'Headshots', 'Headshot Ratio', 'Wins', 'Losses', 'Win/Loss', 'Win Percentage', 'Time Played']
-        data = []
         op_names = list(player.operators.keys())
         op_names.sort()
         for op_name in op_names:
@@ -100,24 +101,30 @@ def write_players_to_csv():
             headshot_ratio = 0 if op.kills == 0 else op.headshots / op.kills
             win_loss = 0 if op.losses == 0 else op.wins / op.losses
             win_perc = 0 if (op.wins + op.losses) == 0 else op.wins / (op.wins + op.losses)
-            row = [op_name, op.kills, op.deaths, kd, op.headshots, headshot_ratio, op.wins, op.losses, win_loss, win_perc, op.time_played]
-            data.append(row)
-        with open(f'data/{player.username}_operator_data.csv', 'w') as csvfile:
-            csvwriter = csv.writer(csvfile)
-            csvwriter.writerow(op_fields)
-            csvwriter.writerows(data)
+            row = [player.username, op_name, op.kills, op.deaths, kd, op.headshots, headshot_ratio, op.wins, op.losses, win_loss, win_perc, op.time_played / 3600]
+            op_data.append(row)
 
-    with open('data/player_general_data.csv', 'w') as csvfile:
+    with open(f'data/{team_name}-player_general_data.csv', 'w') as csvfile:
         csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(fields)
-        csvwriter.writerows(player_data)
+        csvwriter.writerow(general_fields)
+        csvwriter.writerows(general_data)
+
+    with open(f'data/{team_name}-operator_data.csv', 'w') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(op_fields)
+        csvwriter.writerows(op_data)
 
 
 if __name__ == '__main__':
+    try:
+        mkdir('data')
+    except FileExistsError:
+        pass
     with open('auth.json', 'r') as f:
         auth = json.load(f)
 
-    wsu_r6 = ['CodingPenguin1', 'IchorousEagle', 'ShadewMane', 'SharkMAH', 'King.Zeus946', 'Sp00oon', 'AuerryAce', 'SovietSombrero', 'RiekDaFreak']
-    get_stats(wsu_r6, auth['email'], auth['password'])
+    # uplay_ids = ['CodingPenguin1', 'IchorousEagle', 'ShadewMane', 'SharkMAH', 'King.Zeus946', 'Sp00oon', 'AuerryAce', 'SovietSombrero']
+    uplay_ids = ['Danio.FPU', 'Royguin.FPU', 'gokurocks10.FPU', 'LoneSniper.FPU', 'ProSoup.FPU', 'Tuckin.FPU', 'draza.FPU', 'Ambrose891.FPU', 'Dr__Popper.FPU']
+    get_stats(uplay_ids, auth['email'], auth['password'])
     # plot_ranks()
-    write_players_to_csv()
+    write_players_to_csv('FPU')

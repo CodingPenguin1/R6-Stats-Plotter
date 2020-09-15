@@ -11,6 +11,7 @@ class Player:
 
         self.mmr_history = []
         self.rank_name = ''
+        self.time_played = 0
         self._generate_overall_stats()
 
     def _generate_overall_stats(self):
@@ -21,6 +22,8 @@ class Player:
             self.kills += operator.kills
             self.deaths += operator.deaths
             self.headshots += operator.headshots
+            self.time_played += operator.time_played
+        self.time_played /= 3600
 
     def stats(self):
         return {'wins': self.wins, 'losses': self.losses, 'kills': self.kills, 'deaths': self.deaths, 'headshots': self.headshots}
